@@ -1,0 +1,123 @@
+# Tell Puppet where to find system commands.
+Exec {
+  path => [ "/usr/sbin", "/usr/bin", "/sbin", "/bin", "/usr/local/bin" ]
+}
+
+########################
+# Utilities
+########################
+
+define npm_global_install(){
+	exec { "npm_global_install_${name}":
+		command => "npm install ${name} -g",
+		require =>  Package["npm"],
+		timeout => 0 # disable timeout
+	}
+}
+
+define npm_install(){
+	exec { "npm_install_${name}":
+		command => "npm install",
+		cwd     => $name,
+		require =>  [Package["npm"]],
+		timeout => 0, # disable timeout
+	}
+}
+
+########################
+# Pre-install Stage
+########################
+
+# Create preinstall stage
+stage { "preinstall":
+	before => Stage["main"]
+}
+
+# Define preinstall
+class pre_install {
+	exec { "apt-get update": }
+
+	package { [ "nodejs", "npm" ]:
+		ensure  => present,
+		require => Exec["apt-get update"],
+	}
+
+	package { "nginx":
+		ensure  => present,
+		require => Exec["apt-get update"],
+	}
+
+	file { "nginx_config":
+		ensure  => present,
+		path    => "/etc/nginx/sites-available/site",
+		source  => "/vagrant/provision/config/nginx/site",
+		require => Package["nginx"],
+	}
+
+	file { "nginx_remove_default_config":
+		path    => "/etc/nginx/sites-available/default",
+		ensure  => absent,
+		require => File["nginx_config"],
+	}
+
+	exec { "nginx_enable_site":
+		command => "ln -s /etc/nginx/sites-available/site /etc/nginx/sites-enabled",
+		require => [ File["nginx_config"], File["nginx_remove_default_config"] ],
+	}
+
+	#file { "nginx_enable_site":
+	#	ensure => link,
+	#	path   => "/etc/nginx/sites-available/site",
+	#	target => "/etc/nginx/sites-enabled/site",
+	#	require => [ File["nginx_config"], File["nginx_remove_default_config"] ],
+	#}
+
+	exec { "reload_nginx":
+		command => "service nginx reload",
+		require => File["nginx_config"],
+	}
+}
+
+# Invoke preinstall
+class { "pre_install":
+	stage => preinstall
+}
+
+########################
+# Main Stage
+########################
+
+# Because of a package name collision, 'node' is called 'nodejs' in Ubuntu.
+file { "/usr/bin/node":
+  ensure => "link",
+  target => "/usr/bin/nodejs",
+}
+
+# Install global node packages.
+npm_global_install {
+	[ "forever", "bower" ]:
+}
+
+# Install local node packages.
+npm_install {
+	[ "/vagrant/app" ]:
+}
+
+# Install local bower packages.
+exec { "bower_install":
+	command => "bower install --config.interactive=false",
+	cwd     => "/vagrant/app",
+	user    => "vagrant",
+	require => Npm_global_install["bower"],
+	environment => "HOME=/home/vagrant"
+}
+
+# Start forever process
+exec { "forever_start":
+	command => "node ./bin/forever",
+	cwd     => "/vagrant/app",
+	require => [ Npm_install["/vagrant/app"], Exec["bower_install"] ]
+}
+
+# Install MongoDB
+# include "::mongodb::server"

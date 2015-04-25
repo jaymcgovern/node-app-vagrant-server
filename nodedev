@@ -1,0 +1,51 @@
+#!/bin/bash
+
+function nodedev() {
+	local action=$1;
+
+	function log() {
+		echo "node-app-server :: $@";
+	}
+
+	function echo_line(){
+		read_line log
+	}
+
+	function read_line(){
+		while read line
+		do 
+			$1 $line
+		done
+	}
+
+	case $action in
+		"init" )
+			log "Init node-app";
+			if [ "`vagrant status | grep \"not created\"`" != "" ]
+			then
+				log "Vagrant box not running. Running 'vagrant up'."
+				vagrant up;
+			fi
+		;;
+		"start" )
+			if [ "`vagrant status | grep \"not created\"`" != "" ] || [ "`vagrant status | grep \"saved\"`" != "" ] || [ "`vagrant status | grep \"poweroff\"`" != "" ]
+			then
+				log "Vagrant box not running. Running 'vagrant up' to start node app."
+				vagrant up 2>&1 | echo_line;
+			else
+				log "Vagrant box running. Starting node app service"
+				vagrant ssh --command "sudo service node-app start" 2>&1 | echo_line;
+			fi
+		;;
+		"stop" )
+			log "Stopping node app service";
+			vagrant ssh --command "sudo service node-app stop" 2>&1 | echo_line;
+		;;
+		"restart" )
+			nodedev stop;
+			nodedev start;
+		;;
+	esac
+}
+
+nodedev $@
