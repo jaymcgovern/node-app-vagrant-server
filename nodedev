@@ -24,7 +24,7 @@ function nodedev() {
 			if [ "`vagrant status | grep \"not created\"`" != "" ]
 			then
 				log "Vagrant box not running. Running 'vagrant up'."
-				vagrant up;
+				vagrant up 2>&1 | echo_line;
 			fi
 		;;
 		"start" )

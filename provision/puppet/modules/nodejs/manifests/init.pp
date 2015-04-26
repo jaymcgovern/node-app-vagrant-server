@@ -18,7 +18,7 @@ class nodejs {
 	}
 
 	# Install local node packages.
-	npm_install { [ "/vagrant/app" ]:
+	npm_install { [ "/vagrant/app/site" ]:
 		require => [ Package["nodejs"], Package["npm"] ],
 	}
 }
