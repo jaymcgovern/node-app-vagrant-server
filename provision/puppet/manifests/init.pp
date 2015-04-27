@@ -12,7 +12,7 @@ exec { "apt-get update": }
 define npm_global_install(){
 	exec { "npm_global_install_${name}":
 		command => "npm install ${name} -g",
-		require =>  Package["npm"],
+		require =>  Package["nodejs"],
 		timeout => 0 # disable timeout
 	}
 }
@@ -21,8 +21,9 @@ define npm_install(){
 	exec { "npm_install_${name}":
 		command => "npm install",
 		cwd     => $name,
-		require =>  [Package["npm"]],
-		timeout => 0, # disable timeout
+		require =>  [Package["nodejs"]],
+		timeout => 0, # disable timeout,
+		onlyif  => "test -e /vagrant/app/package.json",
 	}
 }
 
