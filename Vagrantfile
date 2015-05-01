@@ -6,14 +6,16 @@ module VagrantPlugins
 			attr_accessor :guest_port
 			attr_accessor :host_port
 			attr_accessor :private_ip
+			attr_accessor :proxy_port
 			attr_accessor :synced_folder
 
 			def initialize
 				settings = YAML::load_file( "settings.yml" )
 
 				@guest_port = settings["web"]["guest_port"] ? settings["web"]["guest_port"] : 80
-				@host_port = settings["web"]["host_port"] ? settings["web"]["host_port"] : 3000
+				@host_port = settings["web"]["host_port"] ? settings["web"]["host_port"] : 3100
 				@private_ip = settings["web"]["private_ip"] ? settings["web"]["private_ip"] : nil
+				@proxy_port = settings["web"]["proxy_port"] ? settings["web"]["proxy_port"] : 3000
 				@synced_folder = settings["web"]["synced_folder"] ? settings["web"]["synced_folder"] : "./"
 			end
 		end
@@ -55,6 +57,10 @@ Vagrant.configure( "2" ) do |config|
 		web.vm.provision :shell, :path => "provision/shell/puppet-setup.sh"
 
 		web.vm.provision "puppet" do |puppet|
+			puppet.facter = {
+				"nginx_proxy_port" => config.web.proxy_port
+			}
+
 			puppet.manifests_path = "provision/puppet/manifests"
 			puppet.module_path = "provision/puppet/modules"
 			puppet.manifest_file = "init.pp"

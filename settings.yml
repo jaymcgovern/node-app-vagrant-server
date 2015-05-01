@@ -1,7 +1,9 @@
 web:
  # NETWORKING
  guest_port: 80
- host_port: 3000
- private_network_ip: "172.16.0.100"
+ host_port: 3100
+ private_ip: "172.16.0.100"
+ # NGINX
+ proxy_port: 3000
  # FOLDER SHARES
  synced_folder: "./"

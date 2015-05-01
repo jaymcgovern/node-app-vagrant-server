@@ -14,7 +14,7 @@ class nginx {
 	file { "nginx_config":
 		ensure  => present,
 		path    => "/etc/nginx/sites-available/site",
-		source  => "/vagrant/provision/config/nginx/site",
+		content => template( "nginx/site.erb" ),
 		require => Package["nginx"],
 	}
 
