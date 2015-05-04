@@ -1,7 +1,7 @@
 class upstart {
 	file { "/etc/init/node-app.conf":
-		ensure  => file,
-		source  => "/vagrant/provision/upstart/node-app.conf",
+		ensure  => present,
+		content => template( "upstart/node-app.conf.erb" ),
 		require => Class["Nodejs"],
 	}
 

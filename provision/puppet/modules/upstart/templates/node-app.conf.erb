@@ -7,6 +7,12 @@ env LOG_PATH="/vagrant/logs"
 env FILE_NAME="startup.js"
 env NODE_PATH="/usr/local/bin/node"
 
+<% if @nginx_proxy_port %>
+env PORT=<%= @nginx_proxy_port %>
+<% else %>
+env PORT=3000
+<% end %>
+
 start on startup
 stop on shutdown
 
